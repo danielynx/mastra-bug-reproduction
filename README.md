@@ -1,27 +1,74 @@
 # mastra-bug-reproduction
 
-Welcome to your new [Mastra](https://mastra.ai/) project! We're excited to see what you'll build.
 
-## Getting Started
+This project demonstrates an issue in the Qdrant `upsert` method, due to incorrect TypeScript typing of the `ids` parameter.
 
-Start the development server:
+According to the Qdrant API reference, the `id` field in the upsert endpoint accepts the following types:
+  - `uint64`
+  - `string` (UUID format only)
 
-```shell
-npm run dev
+Reference [Qdrant API - Upsert Endpoint](https://api.qdrant.tech/api-reference/points/upsert-points#request.body.PointsList.points.id)
+
+In `@mastra/qdrant`, the upsert method defines its parameters using `QdrantUpsertVectorParams`, which extends `UpsertVectorParams` from `@mastra/core`.
+
+Currently, `UpsertVectorParams` defines the `ids` parameter strictly as:
+```ts
+ids?: string[];
 ```
 
-Open [http://localhost:4111](http://localhost:4111) in your browser to access [Mastra Studio](https://mastra.ai/docs/getting-started/studio). It provides an interactive UI for building and testing your agents, along with a REST API that exposes your Mastra application as a local service. This lets you start building without worrying about integration right away.
+#### The Issue
 
-You can start editing files inside the `src/mastra` directory. The development server will automatically reload whenever you make changes.
+In my project, due to business logic requirements, I need to use the relational database ID as the point ID, which is an unsigned integer.
 
-## Learn more
+If I follow the TypeScript definition and convert numeric IDs to strings, Qdrant throws an error because it does not accept arbitrary strings — only UUID-formatted strings are valid.
 
-To learn more about Mastra, visit our [documentation](https://mastra.ai/docs/). Your bootstrapped project includes example code for [agents](https://mastra.ai/docs/agents/overview), [tools](https://mastra.ai/docs/agents/using-tools), [workflows](https://mastra.ai/docs/workflows/overview), [scorers](https://mastra.ai/docs/evals/overview), and [observability](https://mastra.ai/docs/observability/overview).
+If I keep my IDs as unsigned integers (which Qdrant supports), TypeScript throws a type error because `ids` is restricted to `string[]`.
 
-If you're new to AI agents, check out our [course](https://mastra.ai/course) and [YouTube videos](https://youtube.com/@mastra-ai). You can also join our [Discord](https://discord.gg/BTYqqHKUrf) community to get help and share your projects.
+This creates a mismatch:
 
-## Deploy on Mastra Cloud
+- Qdrant supports: `uint64` | `string` (UUID format)
+- Mastra typing supports only: `string[]`
 
-[Mastra Cloud](https://cloud.mastra.ai/) gives you a serverless agent environment with atomic deployments. Access your agents from anywhere and monitor performance. Make sure they don't go off the rails with evals and tracing.
+#### Additional Context
 
-Check out the [deployment guide](https://mastra.ai/docs/deployment/overview) for more details.
+While upgrading Mastra to `v1.8`, unaware of this mismatch, I attempted to fix the TypeScript error by converting my IDs to strings.
+
+During final testing, Qdrant began returning errors. After investigating, I discovered that Qdrant does not accept non-UUID strings.
+
+This type mismatch can lead to a confusing debugging process caused by incorrect TypeScript constraints.
+
+## Steps to reproduce
+
+1. Install dependencies:
+
+    ```shell
+    pnpm install
+    ```
+
+2. Configure Qdrant authentication variables in `.env` following the `.env.example` file.
+
+
+#### Reproduce Qdrant Error
+
+- Execute:
+
+    ```shell
+    node persistir-embedding-with-qdrant-error.ts
+    ``` 
+
+- Running the command above does not persist the vector in the Qdrant database and results in the following error:
+
+    ![Qdrant error response](./readme/qdrant-error.png)
+
+
+#### Reproduce TypeScript Error
+
+- Execute: 
+
+    ```shell
+    node persistir-embedding-with-typescript-error.ts
+    ```
+
+- Running the command above successfully persists the vector in the Qdrant database but results in the following TypeScript error:
+
+    ![TypeScript error](./readme/typescript-error.png)
