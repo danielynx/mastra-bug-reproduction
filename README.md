@@ -39,21 +39,20 @@ This type mismatch can lead to a confusing debugging process caused by incorrect
 
 ## Steps to reproduce
 
-1. Install dependencies:
+1. Intall Docker and Docker Compose
+
+2. Install dependencies:
 
     ```shell
     pnpm install
     ```
-
-2. Configure Qdrant authentication variables in `.env` following the `.env.example` file.
-
 
 #### Reproduce Qdrant Error
 
 - Execute:
 
     ```shell
-    node persistir-embedding-with-qdrant-error.ts
+    npm run scenary-1
     ``` 
 
 - Running the command above does not persist the vector in the Qdrant database and results in the following error:
@@ -66,7 +65,7 @@ This type mismatch can lead to a confusing debugging process caused by incorrect
 - Execute: 
 
     ```shell
-    node persistir-embedding-with-typescript-error.ts
+    npm run scenary-2
     ```
 
 - Running the command above successfully persists the vector in the Qdrant database but results in the following TypeScript error:
