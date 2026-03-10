@@ -21,7 +21,7 @@ try {
             [0.1, 0.2, 0.3, 0.4],
             [0.5, 0.6, 0.7, 0.8],
         ],
-        ids: ['100', '200'], // As required by Mastra TypeScript definitions, the ids must be strings
+        ids: ['100', '200'], // Line that triggers the error. Is string type as required by Mastra TypeScript definitions
     });
 
     console.log("Upsert result: ", result);
