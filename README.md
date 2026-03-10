@@ -1,73 +1,46 @@
 # mastra-bug-reproduction
 
+This project demonstrates an issue in the `@mastra/qdrant` package, specifically in the `upsert` method, when the `ids` 
+parameter is provided as a `uint64` value cast to a `string`, as required by the TypeScript definition.
 
-This project demonstrates an issue in the Qdrant `upsert` method, due to incorrect TypeScript typing of the `ids` parameter.
+In my project, business logic requires using the relational database ID (an unsigned integer) as the Qdrant point ID.
 
-According to the Qdrant API reference, the `id` field in the upsert endpoint accepts the following types:
-  - `uint64`
-  - `string` (UUID format only)
+If I follow the Mastra TypeScript definition and convert numeric IDs to strings, Mastra sends the request to Qdrant with
+those string values. Qdrant then throws an error, because it does not accept arbitrary strings for point IDs, only 
+`UUID` formatted `strings` and `uint64` values are valid, as described in the 
+[Qdrant API - Upsert Endpoint](https://api.qdrant.tech/api-reference/points/upsert-points#request.body.PointsList.points.id).
 
-Reference [Qdrant API - Upsert Endpoint](https://api.qdrant.tech/api-reference/points/upsert-points#request.body.PointsList.points.id)
+    ![Qdrant error response](./readme/qdrant-error.png)
 
-In `@mastra/qdrant`, the upsert method defines its parameters using `QdrantUpsertVectorParams`, which extends `UpsertVectorParams` from `@mastra/core`.
-
-Currently, `UpsertVectorParams` defines the `ids` parameter strictly as:
-```ts
-ids?: string[];
-```
-
-#### The Issue
-
-In my project, due to business logic requirements, I need to use the relational database ID as the point ID, which is an unsigned integer.
-
-If I follow the TypeScript definition and convert numeric IDs to strings, Qdrant throws an error because it does not accept arbitrary strings — only UUID-formatted strings are valid.
-
-If I keep my IDs as unsigned integers (which Qdrant supports), TypeScript throws a type error because `ids` is restricted to `string[]`.
-
-This creates a mismatch:
-
-- Qdrant supports: `uint64` | `string` (UUID format)
-- Mastra typing supports only: `string[]`
-
-#### Additional Context
-
-While upgrading Mastra to `v1.8`, unaware of this mismatch, I attempted to fix the TypeScript error by converting my IDs to strings.
-
-During final testing, Qdrant began returning errors. After investigating, I discovered that Qdrant does not accept non-UUID strings.
-
-This type mismatch can lead to a confusing debugging process caused by incorrect TypeScript constraints.
+As a workaround, I ignore the TypeScript definition and provide a `uint64` value directly. In that case, everything works 
+correctly, except for the TypeScript error shown in my IDE.
 
 ## Steps to reproduce
 
-1. Intall Docker and Docker Compose
+1. Intall Docker and Docker Compose. They are used to run Qdrant intance, so you can skip this step if want use another Qdrant instance.
 
-2. Install dependencies:
+2. Configure the `.env` file following the `.env.example`.
+
+3. Install dependencies:
 
     ```shell
     pnpm install
     ```
 
-#### Reproduce Qdrant Error
-
-- Execute:
+4. Execute:
 
     ```shell
-    npm run scenary-1
-    ``` 
-
-- Running the command above does not persist the vector in the Qdrant database and results in the following error:
-
-    ![Qdrant error response](./readme/qdrant-error.png)
-
-
-#### Reproduce TypeScript Error
-
-- Execute: 
-
-    ```shell
-    npm run scenary-2
+    npm run bug-reproduction
     ```
 
-- Running the command above successfully persists the vector in the Qdrant database but results in the following TypeScript error:
+## Expected behavior
 
-    ![TypeScript error](./readme/typescript-error.png)
+The `@mastra/qdrant` package should work when a `uint64` value cast to a `string` is provided.
+
+I verified the `@mastra/qdrant` source code and noticed that several functions convert IDs from strings to integers 
+internally. However, the `upsert` method does not perform this conversion when `ids` parameter is provided.
+
+Based on this, I assume it was an architectural decision to keep the store API consistent across different vector 
+database integrations by accepting IDs as `string` and converting them internally when required by the underlying database.
+
+Because of that, I would expect the `upsert` method to also handle this conversion.

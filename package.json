@@ -8,12 +8,9 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start",
-    "prescenary-1": "docker compose up -d",
-    "scenary-1": "node src/persistir-embedding-with-qdrant-error.ts",
-    "postscenary-1": "docker compose down -v",
-    "prescenary-2": "docker compose up -d",
-    "scenary-2": "node src/persistir-embedding-with-typescript-error.ts",
-    "postscenary-2": "docker compose down -v"
+    "prebug-reproduction": "docker compose up -d",
+    "bug-reproduction": "node src/qdrant-upsert.ts",
+    "postbug-reproduction": "docker compose down -v"
   },
   "keywords": [],
   "author": "",
