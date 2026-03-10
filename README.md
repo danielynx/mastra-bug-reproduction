@@ -12,7 +12,7 @@ those string values. Qdrant then returns the error shown below, because it does 
 `UUID` formatted `strings` and `uint64` values are valid, as described in the 
 [Qdrant API - Upsert Endpoint](https://api.qdrant.tech/api-reference/points/upsert-points#request.body.PointsList.points.id).
 
-    ![Qdrant error response](./readme/qdrant-error.png)
+![Qdrant error response](./readme/qdrant-error.png)
 
 As a workaround, I ignore the TypeScript definition and provide a `uint64` value directly. In that case, everything works 
 correctly, except for the TypeScript error shown in my IDE.
@@ -31,6 +31,7 @@ Because of that, I would expect the `upsert` method to also handle this conversi
 
 ## Environment
 
+```
   System:
     OS: Linux 6.17 Ubuntu 24.04.4 LTS 24.04.4 LTS (Noble Numbat)
     CPU: (12) x64 Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
@@ -58,6 +59,7 @@ Because of that, I would expect the `upsert` method to also handle this conversi
   Extra:
     Docker: 29.3.0
     Qdrant: v1.17 (fixed in docker-compose.yaml)
+```
 
 ## Steps to reproduce
 
